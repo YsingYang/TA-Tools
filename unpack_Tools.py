@@ -59,7 +59,7 @@ for zip_file in zip_list:
 class Tools:
     def __init__(self):
         self.base_path = None # 存放压缩文件的基本路径
-        self.dist_path = None # 作业放入的目的地址
+        self._dist_path = None # 作业放入的目的地址
         self._search_path = None # 搜索路径
         self._student_list = dict() # 学生列表 str->bool
 
@@ -68,8 +68,8 @@ class Tools:
             print('该路径已经存在, 如果继续使用该路径输入yes,  否则程序终止')
             if(not input() == 'yes'):
                 exit(0) #如果输入的不是yes则结束程序
-            return # 如果是yes直接退出该函数
-        self.dist_path = path # 同时保存作业地址
+            #return # 如果是yes直接退出该函数
+        self._dist_path = path # 同时保存作业地址
         os.makedirs(path)
 
     # search_dir get and set
@@ -101,7 +101,7 @@ class Tools:
             result.append(sid[0])
         return result
 
-    def find_homework_result(self, path):
+    def get_homework_result(self, path):
         self.set_search_dir(path)
         student_file_list = self._get_specific_file_list(True)
         student_list = self._get_sid(student_file_list)
@@ -114,8 +114,28 @@ class Tools:
 
 
 
-    def unpack_zip(self):
-        pass
+    def unpack_zip(self, path):
+        self.set_search_dir(path)
+        assert self._dist_path != None # 先设置好dist_path
+        homework_list = self._get_specific_file_list(True) #获取所有zip列表
+        print(homework_list)
+        regex_pattern = re.compile(r'\d{8}') #定义正则pattern
+        for zip_file in homework_list:
+            # 首先创建相应学号的文件夹
+            sid = regex_pattern.findall(zip_file)
+            if (not len(sid) == 1):  # 如果获取到的sid不等于1
+                print('正则匹配出现异常, 该文件名为 {}'.format(zip_file))
+                continue
+
+            # 指定文件中创建目录
+            student_dir = self._dist_path + '/' + sid[0]
+            try:
+                os.makedirs(student_dir)  # 创建多级目录
+            except FileExistsError: # 文件已经存在
+                pass
+            # 将文件解压至文件夹中
+            zip_object = zipfile.ZipFile(zip_file)
+            zip_object.extractall(student_dir)
 
     def unpack_rar(self):
         pass
@@ -133,4 +153,6 @@ class Tools:
 if __name__ == '__main__':
     tool = Tools()
     tool.init_student_list('/home/ysing/下载/手机平台应用开发.xls')
-    print(tool.find_homework_result('./**/*.zip'))
+    tool.create_dist_dir('../Lab_4')
+    tool.unpack_zip('./**/*.zip') #搜索zip路径
+
