@@ -68,7 +68,8 @@ class Tools:
             print('该路径已经存在, 如果继续使用该路径输入yes,  否则程序终止')
             if(not input() == 'yes'):
                 exit(0) #如果输入的不是yes则结束程序
-            #return # 如果是yes直接退出该函数
+            #如果是Yes, 移除之中的内容, 并重新创建
+            shutil.rmtree(path) #删除掉该路径
         self._dist_path = path # 同时保存作业地址
         os.makedirs(path)
 
@@ -137,22 +138,58 @@ class Tools:
             zip_object = zipfile.ZipFile(zip_file)
             zip_object.extractall(student_dir)
 
+
+    def copy_specific_type(self, path, remove=False, **kwargs): # 传入解压后, 作业放入的base_dir
+
+        student_list = os.listdir(path)
+        types = kwargs['types']
+        exclude = kwargs['exclude']
+        for student in student_list:
+            student_dir = path + '/' + student
+            for type in types:
+                file_list = glob.glob(student_dir + '/**/' + type, recursive=True)  # 对file_list进行for循环, search/app/src/
+                print(file_list)
+                for file_path in file_list:
+                    if (self._check_is_not_MainActivity(type, file_path, '/app/src', exclude = exclude)):  # 如果不是在app/src目录下的.java文件, continue
+                        continue
+                    try:
+                        shutil.copy(file_path, student_dir)
+                    except shutil.SameFileError:  # 如果目录一一致, 则跳过
+                        pass
+
+            if remove == True: #如果为remove = True, 删除文件夹
+                self.delete_dir(student_dir)
+
+
     def unpack_rar(self):
         pass
 
     def _get_all_specific_file(self):
         pass
 
-    def _check_is_not_MainActivity(self, type, file_path):
-        pass
+    def _check_is_not_MainActivity(self, type, file_path, specific_dir = None, exclude = []): # 写得有点问题
+        if(specific_dir != None and type == '*.java'):
+            if (re.search(specific_dir, file_path) == None):
+                return True  # 如果不存在app/src, 则输出文件返回True
+        for exclude_postfix in exclude: # 如果是exclude中的文件则跳过, 比如android的test文件
+            if re.search(exclude_postfix, file_path) != None:
+                return True
+        #if (re.search('ExampleUnitTest.java', file_path) != None or re.search('ExampleInstrumentedTest.java',
+        #                                                                      file_path) != None):
+        return False
 
-    def _delete_dir(self, path, sub_file_list):
-        pass
+    def delete_dir(self, path):
+        sub_file_list = os.listdir(path)
+        for sub_file in sub_file_list:  # 注意列出来的只是一个文件名, 而不是一个目录
+            if os.path.isdir(path + '/' + sub_file):  # 如果是目录, 则删除,
+                shutil.rmtree(path + '/' + sub_file)
+
 
 
 if __name__ == '__main__':
     tool = Tools()
     tool.init_student_list('/home/ysing/下载/手机平台应用开发.xls')
-    tool.create_dist_dir('../Lab_4')
-    tool.unpack_zip('./**/*.zip') #搜索zip路径
+    #tool.create_dist_dir('../Lab_4')
+    #tool.unpack_zip('./**/*.zip') #搜索zip路径
+    #tool.copy_specific_type('../Lab_4', remove=True, types = ['*.pdf', '*.java'], exclude=['ExampleUnitTest.java', 'ExampleInstrumentedTest.java'])
 
