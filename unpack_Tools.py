@@ -68,10 +68,14 @@ class Tools:
         if(os.path.exists(path)):#检测路径文件是否存在
             print('该路径已经存在, 如果继续使用该路径输入yes,  否则程序终止')
             if(not input() == 'yes'):
-                return #如果输入的不是yes则直接返回
+                pass
+                #return #如果输入的不是yes则直接返回
             # shutil.rmtree(path) #删除掉该路径
         self._dist_path = path # 同时保存作业地址
-        os.makedirs(path)
+        try:
+            os.makedirs(path)
+        except:
+            pass
 
     # search_dir get and set
     def set_search_dir(self, path):
@@ -113,7 +117,6 @@ class Tools:
             self._student_list[student] = True
         result = [key for key, value in self._student_list.items() if value == False]
         return result
-
 
 
     def unpack_zip(self, path):
@@ -163,9 +166,21 @@ class Tools:
     def unpack_rar(self, path):
         self.set_search_dir(path)
         assert self._dist_path != None  # 先设置好dist_path
-        homework_list = self._get_specific_file_list(True)  # 获取所有rar列表
-        rar_file = rarfile.RarFile(self._search_path)
-        pass
+        rar_files = self._get_specific_file_list(True)  # 获取所有rar列表
+        regex_pattern = re.compile(r'\d{8}')  # 定义正则pattern
+        for rar_file in rar_files:
+            rar_object = rarfile.RarFile(rar_file)
+            sid = regex_pattern.findall(rar_file)
+            if (not len(sid) == 1):  # 如果获取到的sid不等于1
+                print('正则匹配出现异常, 该文件名为 {}'.format(rar_file))
+                continue
+            student_dir = self._dist_path + '/' + sid[0]
+            try:
+                os.makedirs(student_dir)  # 创建多级目录
+            except FileExistsError: # 文件已经存在
+                pass
+            rar_object.extractall(student_dir)
+
 
     def _get_all_specific_file(self):
         pass
