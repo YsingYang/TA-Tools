@@ -1,6 +1,7 @@
 import shutil
 import glob
 import os
+import rarfile
 import re
 import zipfile
 import xlrd
@@ -67,9 +68,8 @@ class Tools:
         if(os.path.exists(path)):#检测路径文件是否存在
             print('该路径已经存在, 如果继续使用该路径输入yes,  否则程序终止')
             if(not input() == 'yes'):
-                exit(0) #如果输入的不是yes则结束程序
-            #如果是Yes, 移除之中的内容, 并重新创建
-            shutil.rmtree(path) #删除掉该路径
+                return #如果输入的不是yes则直接返回
+            # shutil.rmtree(path) #删除掉该路径
         self._dist_path = path # 同时保存作业地址
         os.makedirs(path)
 
@@ -83,8 +83,8 @@ class Tools:
     def init_student_list(self, path): # 初始化学生列表
         excel_data = xlrd.open_workbook(path)
         sh = excel_data.sheet_by_index(0)
-        for row in range(6, sh.nrows):
-            data = sh.cell(row, 1).value
+        for row in range(1, sh.nrows):
+            data = sh.cell(row, 0).value
             self._student_list[data] = False
 
     def _get_specific_file_list(self, recursive): #获取文件列表
@@ -102,13 +102,14 @@ class Tools:
             result.append(sid[0])
         return result
 
-    def get_homework_result(self, path):
-        self.set_search_dir(path)
-        student_file_list = self._get_specific_file_list(True)
+    def get_homework_result(self, paths):
+        student_file_list = []
+        for path in paths:
+            self.set_search_dir(path)
+            student_file_list.extend(self._get_specific_file_list(True))
         student_list = self._get_sid(student_file_list)
         for student in student_list:
-            #assert student in self._student_list
-
+                #assert student in self._student_list
             self._student_list[student] = True
         result = [key for key, value in self._student_list.items() if value == False]
         return result
@@ -119,7 +120,6 @@ class Tools:
         self.set_search_dir(path)
         assert self._dist_path != None # 先设置好dist_path
         homework_list = self._get_specific_file_list(True) #获取所有zip列表
-        print(homework_list)
         regex_pattern = re.compile(r'\d{8}') #定义正则pattern
         for zip_file in homework_list:
             # 首先创建相应学号的文件夹
@@ -148,7 +148,6 @@ class Tools:
             student_dir = path + '/' + student
             for type in types:
                 file_list = glob.glob(student_dir + '/**/' + type, recursive=True)  # 对file_list进行for循环, search/app/src/
-                print(file_list)
                 for file_path in file_list:
                     if (self._check_is_not_MainActivity(type, file_path, '/app/src', exclude = exclude)):  # 如果不是在app/src目录下的.java文件, continue
                         continue
@@ -161,7 +160,11 @@ class Tools:
                 self.delete_dir(student_dir)
 
 
-    def unpack_rar(self):
+    def unpack_rar(self, path):
+        self.set_search_dir(path)
+        assert self._dist_path != None  # 先设置好dist_path
+        homework_list = self._get_specific_file_list(True)  # 获取所有rar列表
+        rar_file = rarfile.RarFile(self._search_path)
         pass
 
     def _get_all_specific_file(self):
@@ -174,8 +177,6 @@ class Tools:
         for exclude_postfix in exclude: # 如果是exclude中的文件则跳过, 比如android的test文件
             if re.search(exclude_postfix, file_path) != None:
                 return True
-        #if (re.search('ExampleUnitTest.java', file_path) != None or re.search('ExampleInstrumentedTest.java',
-        #                                                                      file_path) != None):
         return False
 
     def delete_dir(self, path):
@@ -183,13 +184,3 @@ class Tools:
         for sub_file in sub_file_list:  # 注意列出来的只是一个文件名, 而不是一个目录
             if os.path.isdir(path + '/' + sub_file):  # 如果是目录, 则删除,
                 shutil.rmtree(path + '/' + sub_file)
-
-
-
-if __name__ == '__main__':
-    tool = Tools()
-    tool.init_student_list('/home/ysing/下载/手机平台应用开发.xls')
-    #tool.create_dist_dir('../Lab_4')
-    #tool.unpack_zip('./**/*.zip') #搜索zip路径
-    #tool.copy_specific_type('../Lab_4', remove=True, types = ['*.pdf', '*.java'], exclude=['ExampleUnitTest.java', 'ExampleInstrumentedTest.java'])
-
