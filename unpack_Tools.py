@@ -124,7 +124,7 @@ class Tools:
         for type in types:
             assert self._dist_path != None  # 先设置好dist_path
             self._search_path = self._set_glob_search_file(path, type)
-            files = self._get_specific_file_list(True)  # 递归获取列表
+            files = sorted(self._get_specific_file_list(True))  # 递归获取列表
             if len(files) == 0:
                 continue  # 没有则下一个循环
             regex_pattern = re.compile(r'\d{8}')  # 定义正则pattern

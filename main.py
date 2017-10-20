@@ -10,8 +10,8 @@ if __name__ == '__main__':
         print(result[row:row+3])
 
     tool.create_dist_dir('/home/ysing/Documents/TA-MAD/Homework-zip/Lab-4-Homework')
-    tool.unpack('/home/ysing/PycharmProjects/Test')
+    #tool.unpack('/home/ysing/PycharmProjects/TA-tool/Lab_4')
 
     tool.copy_specific_type('/home/ysing/Documents/TA-MAD/Homework-zip/Lab-4-Homework',
-                                remove=False, types = ['*.pdf', '*.java'], exclude=['ExampleUnitTest.java', 'ExampleInstrumentedTest.java'])
+                                remove=True, types = ['*.doc', '*.docx', '*.pdf', '*.java'], exclude=['ExampleUnitTest.java', 'ExampleInstrumentedTest.java'])
     tool.check_file_is_missing('/home/ysing/Documents/TA-MAD/Homework-zip/Lab-4-Homework', ['.java', '.pdf'], {'.doc':'.pdf', '.docx':'.pdf'})
