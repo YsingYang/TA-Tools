@@ -120,11 +120,13 @@ class Tools:
     path : 解压的目的目录
     types : 解压文件类型
     '''
-    def unpack(self, path, types=['*.zip', '*.rar']):
+    def unpack(self, path, types=['*.zip', '*.rar'], deep=0):
         for type in types:
             assert self._dist_path != None  # 先设置好dist_path
             self._search_path = self._set_glob_search_file(path, type)
             files = self._get_specific_file_list(True)  # 获取所有rar列表
+            if len(files == 0):
+                continue  # 没有则下一个循环
             regex_pattern = re.compile(r'\d{8}')  # 定义正则pattern
             for file in files:
                 # 其实这里是否需要加入assert
@@ -133,7 +135,7 @@ class Tools:
                 if not len(sid) == 1:  # 如果获取到的sid不等于1
                     print('正则匹配出现异常, 该文件名为 {}'.format(file))
                     continue
-                student_dir = self._dist_path + '/' + sid[0]
+                student_dir = os.path.join(self._dist_path, sid[0]) if deep == 0 else os.path.join(self._dist_path, sid[0], str(deep))
                 try:
                     os.makedirs(student_dir)  # 创建多级目录
                 except FileExistsError:  # 文件已经存在
@@ -141,6 +143,8 @@ class Tools:
                 try:
                     compressed_object = rarfile.RarFile(file) if file.endswith('.rar') else zipfile.ZipFile(file) # 可拓展性不强
                     compressed_object.extractall(student_dir)
+                    # 递归继续搜索
+                    self.unpack(student_dir, types, deep+1)
                 except:  # 避免一些错误的压缩文件
                     pass
 
@@ -169,7 +173,7 @@ class Tools:
                     mapping.remove(split_result[1])
                 if split_result[1] in extended_files and extended_files[split_result[1]] in mapping:  # 扩展名在extened_files上且拓展项对应的文件名也在mapping中
                     mapping.remove(extended_files[split_result[1]])
-        if len(mapping) > 0 :  # 仍有需要的文件没搜索到， 打印结果
+        if len(mapping) > 0:  # 仍有需要的文件没搜索到， 打印结果
             print('学号 :' + os.path.basename(file_path) + '     缺少文件', mapping)
 
     def delete_dir(self, path):
