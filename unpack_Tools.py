@@ -5,6 +5,8 @@ import copy
 import re
 import zipfile
 import xlrd
+import xlwt
+import xlutils.copy
 import rarfile
 
 
@@ -63,6 +65,28 @@ class Tools:
             self._student_list[student] = True
         result = [key for key, value in self._student_list.items() if value == False]
         return result
+
+    '''
+    根据homework_result来编辑作业提交情况的excel表格
+    path : excel文件的路径
+    sid_col : 读取excel-sid的列号
+    sid_start_row : 读取excel-sid的起始行号
+    write_col : 记录写入的列号
+    write_start_row : 记录写入的行号
+    homework_result=[] : 没交作业的学生学生列表r
+    '''
+    def set_homework_result(self, path, sid_col=0, sid_start_row=0, write_col=0, write_start_row=0, homework_result=[]):
+        mapping = set(homework_result)
+        r_excel_data = xlrd.open_workbook(path, formatting_info=True)  # 通过xlrd获取excel
+        w_excel_data = xlutils.copy.copy(r_excel_data)  # 通过xlutils.copy的copy函数copy一份可以编辑的excel
+        w_sh = w_excel_data.get_sheet(0)    # 可编辑的sheet
+        r_sh = r_excel_data.sheet_by_index(0)  # 可读的sheet
+        assert sid_start_row == write_start_row
+        for row in range(write_start_row, r_sh.nrows):
+            sid = r_sh.cell_value(row, sid_col)
+            if sid not in mapping: # 如果学生不在未在没交作业的文件
+                w_sh.write(row, write_col, '1')
+        w_excel_data.save(path)
 
     '''
     解压后, 拷贝相应的后缀文件到学生文件根目录下,
