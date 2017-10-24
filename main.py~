@@ -4,7 +4,7 @@ if __name__ == '__main__':
     tool = Tools()
     imap_tool = IMAP_Tools()
     imap_tool.set_imaplib_server(imap_server='imap.qq.com')
-    imap_tool.login_imap('username', 'password')
+    imap_tool.login_imap('594171146@qq.com', 'wakmwrciujzhbdcg')
     imap_tool.set_imap_select()
     result_code, messages = imap_tool.search_email('ALL')
     imap_tool.download_from_emails(messages)

@@ -9,3 +9,6 @@
 [python 读取excel](https://stackoverflow.com/questions/22169325/read-excel-file-in-python)
 
 [makedirs dir exist](https://stackoverflow.com/questions/273192/how-can-i-create-a-directory-if-it-does-not-exist)
+
+
+[IMAP select](https://stackoverflow.com/questions/5200025/imaplib-error-command-fetch-illegal-in-state-auth)
