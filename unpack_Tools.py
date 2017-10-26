@@ -43,50 +43,53 @@ class IMAP_Tools:
             print(sys.exc_info()[1])
             sys.exit(1)  # 连接异常直接退出
 
-    def search_email(self, type='(UNSEEN)'):
+    def search_email(self, type='UNSEEN'):
         (result_code, messages) = self._conn_imap_server.search(None, type)
         if(result_code != "OK"):
             print('search_email error')
             sys.exit(1)
         return result_code, messages
 
-    def download_from_emails(self, messages):
+    def download_from_emails(self, messages, base_dir=os.getcwd()):
         email_list = self._messages_to_list(messages)
         for email_object in email_list:
             response, data = self._conn_imap_server.fetch(email_object, "(RFC822)")   # 获取所有list
             # 这里不能直接用str()强制转换, 因为data[0][1]是byte类型, 需要进行decode
-            message = email.message_from_string(data[0][1].decode('utf-8'))
-
+            message = email.message_from_bytes(data[0][1])
             # 检查是否有附件
             if message.get_content_maintype() != 'multipart':  # 不为multipart对象
                 continue
+            seen_flag = False  # 标识已读
             for part in message.walk():
                 # just multipart container
                 if part.get_content_maintype() == 'multipart':
+                    print(part.as_string())
                     continue
                 # 参考StackOverflow的
                 if part.get('Content-Disposition') is None:
+                    print(part.as_string())
                     continue
                 filename = part.get_filename()
                 #print(decode_header(filename)[0])
                 filename_decoded = decode_header(filename)[0]  # tuple
-                if(filename_decoded[1] != None):
-                    filename = filename_decoded[0].decode(filename_decoded[1])
+                if(filename_decoded[1] != None and filename_decoded[1] != 'NoneType'):
+                    filename = filename_decoded[0].decode(filename_decoded[1])  # 可能存在utf-8编码
                 print('准备下载 : ' + filename)
-                attach_path = os.path.join(os.getcwd(), filename)
+                attach_path = os.path.join(base_dir, filename)
+                if not filename.endswith('.zip') and not filename.endswith('.rar'):
+                    continue
                 if not os.path.isfile(attach_path):
                     with open(attach_path, 'wb') as fp:
                         fp.write(part.get_payload(decode=True))
-
-            self._conn_imap_server.store(email_object, '+FLAGS', '\Seen') # 标记邮件为已读
-
+                        seen_flag = True
+            if seen_flag:
+                self._conn_imap_server.store(email_object, '+FLAGS', '\Seen')  # 标记邮件为已读
 
     def imap_logout(self):
         self._conn_imap_server.logout()
 
     def _messages_to_list(self, messages):
         return messages[0].split()
-
 
 
 class Tools:
